@@ -471,6 +471,26 @@ resource "aws_instance" "nginx" {
       host                = self.public_ip
     }
   }
+    provisioner "file" {
+    source      = "../configuraciones_servicios/nginx/default"  
+    destination = "/home/ubuntu/default"          
+    connection {
+      type                = "ssh"
+      user                = "ubuntu"
+      private_key = file(".ssh/ssh-mensagl-2025-${var.nombre_alumno}.pem")
+      host                = self.public_ip
+    }
+  }
+  provisioner "file" {
+    source      = "../configuraciones_servicios/nginx/nginx.conf"  
+    destination = "/home/ubuntu/nginx.conf"          
+    connection {
+      type                = "ssh"
+      user                = "ubuntu"
+      private_key = file(".ssh/ssh-mensagl-2025-${var.nombre_alumno}.pem")
+      host                = self.public_ip
+    }
+  }
   provisioner "remote-exec" {
     connection {
       type        = "ssh"
@@ -572,8 +592,9 @@ resource "aws_instance" "Wordpress" {
       "sudo ./wordpress.sh",
       "wait 180",
       "sudo -u www-data wp-cli core config --dbname=wordpress --dbuser=wordpress --dbpass=_Admin123 --dbhost=${aws_db_instance.MySQL_Wordpress.endpoint} --dbprefix=wp --path=/var/www/html",
-      "sudo -u www-data wp-cli core install --url='http://nginxequipo4.duckdns.org' --title='Wordpress equipo 4' --admin_user='admin' --admin_password='_Admin123' --admin_email='admin@example.com' --path=/var/www/html",
+      "sudo -u www-data wp-cli core install --url='http://nginxequipo4-5.duckdns.org' --title='Wordpress equipo 4' --admin_user='admin' --admin_password='_Admin123' --admin_email='admin@example.com' --path=/var/www/html",
       "sudo -u www-data wp-cli plugin install supportcandy --activate --path='/var/www/html'",
+      "sudo -u www-data wp-cli plugin install user-registration --activate --path=/var/www/html",
       "sudo chmod +x wordpress2.sh",
       "sudo ./wordpress2.sh"
     ]
@@ -732,38 +753,6 @@ resource "aws_instance" "XMPP-database-maestro" {
       bastion_private_key = file("./.ssh/ssh-mensagl-2025-${var.nombre_alumno}.pem")
           }
   }
-  provisioner "file" {
-    source      = "../scripts_servicios/mysql_maestro.sh"  # script local
-    destination = "/home/ubuntu/mysql_maestro.sh" # destino
-    connection {
-      type                = "ssh"
-      user                = "ubuntu"
-      private_key         = file("./.ssh/ssh-mensagl-2025-${var.nombre_alumno}.pem")
-      host                = self.private_ip
-      bastion_host        = aws_instance.nginx.public_ip
-      bastion_user        = "ubuntu"
-      bastion_private_key = file("./.ssh/ssh-mensagl-2025-${var.nombre_alumno}.pem")
-          }
-  }
-  provisioner "remote-exec" {
-    connection {
-      type        = "ssh"
-      user        = "ubuntu"
-      private_key = file("./.ssh/ssh-mensagl-2025-${var.nombre_alumno}.pem")
-      host        = self.private_ip
-
-      # SSH a través de nginx ya que es el unico con ip publica
-      bastion_host        = aws_instance.nginx.public_ip
-      bastion_user        = "ubuntu"
-      bastion_private_key = file("./.ssh/ssh-mensagl-2025-${var.nombre_alumno}.pem")
-    }
-    
-    inline = [
-            "cd ~",
-      "sudo chmod +x mysql_maestro.sh",
-      "sudo ./mysql_maestro.sh"
-    ]
-  }
     user_data = base64encode(templatefile("../scripts_servicios/clustersql.sh", {
     role           = "primary"
   }))
@@ -790,6 +779,20 @@ resource "aws_instance" "XMPP-database-replica" {
   key_name               = aws_key_pair.ssh_key.key_name
   associate_public_ip_address = false
   private_ip             = "10.217.2.201"
+  
+    provisioner "file" {
+    source      = ".ssh/ssh-mensagl-2025-${var.nombre_alumno}.pem"  # ubicacion del script local
+    destination = "/home/ubuntu/clave.pem"          # destino en el equipo remoto
+    connection {
+      type                = "ssh"
+      user                = "ubuntu"
+      private_key         = file("./.ssh/ssh-mensagl-2025-${var.nombre_alumno}.pem")
+      host                = self.private_ip
+      bastion_host        = aws_instance.nginx.public_ip
+      bastion_user        = "ubuntu"
+      bastion_private_key = file("./.ssh/ssh-mensagl-2025-${var.nombre_alumno}.pem")
+          }
+  }
     
     user_data = base64encode(templatefile("../scripts_servicios/clustersql.sh", {
     role           = "secondary"

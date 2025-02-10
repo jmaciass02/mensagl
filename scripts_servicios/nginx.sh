@@ -1,11 +1,11 @@
 #!/bin/bash
 #cambiar dominios
-wordpress=nginxequipo4
-openfire=openfire-equipo4
+wordpress=nginxequipo4-5
+openfire=openfireequipo4-5
 #cambiar token
 token=7dc394d7-8282-438d-8358-643ed6b1145d 
 #cambiar alumno
-alumno=jmacias02
+alumno=jmaciass02
 
 mkdir -p "/home/ubuntu/duckdns/"
 cd "/home/ubuntu/duckdns/"
@@ -34,12 +34,9 @@ snap install certbot-dns-duckdns
 sudo snap set certbot trust-plugin-with-root=ok
 sudo snap connect certbot:plugin certbot-dns-duckdns
 
-#clonar git
-sudo git clone https://github.com/$alumno/mensagl
-
 #mover configuraciones
-sudo mv mensagl/configuraciones_servicios/nginx/default /etc/nginx/sites-available/
-sudo mv mensagl/configuraciones_servicios/nginx/nginx.conf /etc/nginx/nginx.conf
+sudo mv /home/ubuntu/default /etc/nginx/
+sudo mv /home/ubuntu/nginx.conf /etc/nginx/nginx.conf
 #Restart Nginx
 sudo systemctl stop nginx
 
