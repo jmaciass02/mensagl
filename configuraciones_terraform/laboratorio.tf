@@ -4,7 +4,7 @@
 variable "nombre_alumno" {
   description = "Nombre para nombrar los recursos"
   type        = string
-  default     ="jose" 
+  default     = "josems" 
 }
 
 # ============================
@@ -503,7 +503,7 @@ resource "aws_instance" "Wordpress" {
   key_name               = aws_key_pair.ssh_key.key_name
   associate_public_ip_address = false
   private_ip             = "10.217.3.100"
-   provisioner "file" {
+  provisioner "file" {
     source      = ".ssh/ssh-mensagl-2025-${var.nombre_alumno}.pem"  # ubicacion del script local
     destination = "/home/ubuntu/clave.pem"          # destino en el equipo remoto
     connection {
@@ -561,7 +561,6 @@ resource "aws_instance" "Wordpress" {
       user        = "ubuntu"
       private_key = file("./.ssh/ssh-mensagl-2025-${var.nombre_alumno}.pem")
       host        = self.private_ip
-
       # SSH a través de nginx ya que es el unico con ip publica
       bastion_host        = aws_instance.nginx.public_ip
       bastion_user        = "ubuntu"

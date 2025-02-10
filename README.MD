@@ -65,15 +65,20 @@ El reto Mensagl tiene como objetivo la implementación de un servicio de mensaje
    git clone https://github.com/amazona01/AWSCLI
       ```
 2. Cambiar el nombre del alumno en el script de terraform
-3. Cambiar los dominios utilizados en nginx.sh
-4. Configurar Terraform e iniciar la infraestructura.
+3. Cambiar los dominios el nombre y el token utilizados en nginx.sh
+4. En la linea 575 de terraform cambiar el dominio de wordpress
+5. Cambiar los dominios en wordpress2.sh
+6. Cambiar los dominios y certificados en configuraciones_servicios/nginx/default
+7. Cambiar los dominios y certificados en configuraciones_servicios/nginx/nginx.conf
+8. Cambiar las direcciones IP y la red 
+9. Configurar Terraform e iniciar la infraestructura.
    ```bash
    cd AWSCLI/configuraciones_terraform
    terraform init
    terraform plan
    terraform apply
    ```
-5. Comprobar conectividad y funcionalidad.
+10. Comprobar conectividad y funcionalidad.
 
 <div align="center">
 

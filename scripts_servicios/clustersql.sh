@@ -2,8 +2,8 @@
 
 # Variables from Terraform
 role="${role}"
-primary_ip="10.218.2.200"
-secondary_ip="10.218.2.201"
+primary_ip="10.217.2.200"
+secondary_ip="10.217.2.201"
 db_user="openfire"
 db_password="_Admin123"
 db_name="openfire"

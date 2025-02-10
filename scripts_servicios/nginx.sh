@@ -1,10 +1,12 @@
 #!/bin/bash
-#preparar dns dinamico
-# crear directorio
+#cambiar dominios
 wordpress=nginxequipo4
 openfire=openfire-equipo4
-token=7dc394d7-8282-438d-8358-643ed6b1145d
-alumno=jmaciass02
+#cambiar token
+token=7dc394d7-8282-438d-8358-643ed6b1145d 
+#cambiar alumno
+alumno=jmacias02
+
 mkdir -p "/home/ubuntu/duckdns/"
 cd "/home/ubuntu/duckdns/"
 
@@ -41,28 +43,22 @@ sudo mv mensagl/configuraciones_servicios/nginx/nginx.conf /etc/nginx/nginx.conf
 #Restart Nginx
 sudo systemctl stop nginx
 
+sudo certbot certonly  --non-interactive --agree-tos --email $alumno@educantabria.es --preferred-challenges dns --authenticator dns-duckdns --dns-duckdns-token $token --dns-duckdns-propagation-seconds 60 -d "$wordpress.duckdns.org"
 sudo certbot certonly  --non-interactive --agree-tos --email $alumno@educantabria.es --preferred-challenges dns --authenticator dns-duckdns --dns-duckdns-token $token --dns-duckdns-propagation-seconds 120 -d "$wordpress.duckdns.org"
-sudo certbot certonly  --non-interactive --agree-tos --email $alumno@educantabria.es --preferred-challenges dns --authenticator dns-duckdns --dns-duckdns-token $token --dns-duckdns-propagation-seconds 120 -d "$wordpress.duckdns.org"
+sudo certbot certonly  --non-interactive --agree-tos --email $alumno@educantabria.es --preferred-challenges dns --authenticator dns-duckdns --dns-duckdns-token $token --dns-duckdns-propagation-seconds 60 -d "$openfire.duckdns.org"
 sudo certbot certonly  --non-interactive --agree-tos --email $alumno@educantabria.es --preferred-challenges dns --authenticator dns-duckdns --dns-duckdns-token $token --dns-duckdns-propagation-seconds 120 -d "$openfire.duckdns.org"
-sudo certbot certonly  --non-interactive --agree-tos --email $alumno@educantabria.es --preferred-challenges dns --authenticator dns-duckdns --dns-duckdns-token $token --dns-duckdns-propagation-seconds 120 -d "$openfire.duckdns.org"
-sudo certbot certonly --non-interactive --agree-tos --email $alumno@educantabria.es --preferred-challenges dns --authenticator dns-duckdns --dns-duckdns-token $token --dns-duckdns-propagation-seconds 120 -d "*.$openfire.duckdns.org"
+sudo certbot certonly --non-interactive --agree-tos --email $alumno@educantabria.es --preferred-challenges dns --authenticator dns-duckdns --dns-duckdns-token $token --dns-duckdns-propagation-seconds 60 -d "*.$openfire.duckdns.org"
 sudo certbot certonly --non-interactive --agree-tos --email $alumno@educantabria.es --preferred-challenges dns --authenticator dns-duckdns --dns-duckdns-token $token --dns-duckdns-propagation-seconds 120 -d "*.$openfire.duckdns.org"
 
 mkdir /home/ubuntu/certwordpress
 mkdir -p /home/ubuntu/certopenfire/wildcard
 
 sudo cp /etc/letsencrypt/live/$wordpress.duckdns.org/* /home/ubuntu/certwordpress/
-
 sudo cp /etc/letsencrypt/live/$openfire.duckdns.org/* /home/ubuntu/certopenfire/
-
 sudo cp /etc/letsencrypt/live/$openfire.duckdns.org-0001/* /home/ubuntu/certopenfire/wildcard/
 
 sudo chown -R ubuntu:ubuntu /home/ubuntu
-
-sudo chown -R ubuntu:ubuntu /home/ubuntu
 sudo chmod -R 770 /home/ubuntu
-
-sudo scp -i clave.pem /home/ubuntu/certwordpress/* ubuntu@10.218.3.100:/home/ubuntu/
 
 sudo systemctl start nginx
 
