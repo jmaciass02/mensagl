@@ -33,7 +33,7 @@ sudo snap set certbot trust-plugin-with-root=ok
 sudo snap connect certbot:plugin certbot-dns-duckdns
 
 #clonar git
-sudo git clone https://github.com/amazona01/mensagl.git
+sudo git clone https://github.com/$alumno/mensagl
 
 #mover configuraciones
 sudo mv mensagl/configuraciones_servicios/nginx/default /etc/nginx/sites-available/
