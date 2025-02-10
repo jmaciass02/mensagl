@@ -2,7 +2,7 @@
 #preparar dns dinamico
 # crear directorio
 wordpress=nginxequipo4
-openfire=openfireequipo4
+openfire=openfire-equipo4
 token=7dc394d7-8282-438d-8358-643ed6b1145d
 alumno=jmaciass02
 mkdir -p "/home/ubuntu/duckdns/"
@@ -42,7 +42,10 @@ sudo mv mensagl/configuraciones_servicios/nginx/nginx.conf /etc/nginx/nginx.conf
 sudo systemctl stop nginx
 
 sudo certbot certonly  --non-interactive --agree-tos --email $alumno@educantabria.es --preferred-challenges dns --authenticator dns-duckdns --dns-duckdns-token $token --dns-duckdns-propagation-seconds 120 -d "$wordpress.duckdns.org"
+sudo certbot certonly  --non-interactive --agree-tos --email $alumno@educantabria.es --preferred-challenges dns --authenticator dns-duckdns --dns-duckdns-token $token --dns-duckdns-propagation-seconds 120 -d "$wordpress.duckdns.org"
 sudo certbot certonly  --non-interactive --agree-tos --email $alumno@educantabria.es --preferred-challenges dns --authenticator dns-duckdns --dns-duckdns-token $token --dns-duckdns-propagation-seconds 120 -d "$openfire.duckdns.org"
+sudo certbot certonly  --non-interactive --agree-tos --email $alumno@educantabria.es --preferred-challenges dns --authenticator dns-duckdns --dns-duckdns-token $token --dns-duckdns-propagation-seconds 120 -d "$openfire.duckdns.org"
+sudo certbot certonly --non-interactive --agree-tos --email $alumno@educantabria.es --preferred-challenges dns --authenticator dns-duckdns --dns-duckdns-token $token --dns-duckdns-propagation-seconds 120 -d "*.$openfire.duckdns.org"
 sudo certbot certonly --non-interactive --agree-tos --email $alumno@educantabria.es --preferred-challenges dns --authenticator dns-duckdns --dns-duckdns-token $token --dns-duckdns-propagation-seconds 120 -d "*.$openfire.duckdns.org"
 
 mkdir /home/ubuntu/certwordpress
@@ -54,11 +57,10 @@ sudo cp /etc/letsencrypt/live/$openfire.duckdns.org/* /home/ubuntu/certopenfire/
 
 sudo cp /etc/letsencrypt/live/$openfire.duckdns.org-0001/* /home/ubuntu/certopenfire/wildcard/
 
+sudo chown -R ubuntu:ubuntu /home/ubuntu
 
-sudo chown -R ubuntu:ubuntu /home/ubuntu/certwordpress
-sudo chown -R ubuntu:ubuntu /home/ubuntu/certopenfire
-sudo chmod -R 600 /home/ubuntu/certwordpress/
-sudo chmod -R 600 /home/ubuntu/certopenfire/
+sudo chown -R ubuntu:ubuntu /home/ubuntu
+sudo chmod -R 770 /home/ubuntu
 
 sudo scp -i clave.pem /home/ubuntu/certwordpress/* ubuntu@10.218.3.100:/home/ubuntu/
 
