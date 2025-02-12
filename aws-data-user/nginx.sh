@@ -8,6 +8,7 @@ token=7dc394d7-8282-438d-8358-643ed6b1145d
 alumno=jmaciass02
 
 chmod 600 clave.pem
+
 mkdir -p "/home/ubuntu/duckdns/"
 cd "/home/ubuntu/duckdns/"
 
@@ -76,12 +77,12 @@ sudo mv /home/ubuntu/nginx.conf /etc/nginx/nginx.conf
 #Restart Nginx
 sudo systemctl stop nginx
 
-while [ ! -e /etc/letsencrypt/live/nginx-equipo4.duckdns.org ]; do
+while [ ! -e /etc/letsencrypt/live/nginx-equipo4	.duckdns.org ]; do
     
     sudo certbot certonly \
         --non-interactive \
         --agree-tos \
-        --email "$alumno@educantabria.es" \
+        --email "$email" \
         --preferred-challenges dns \
         --authenticator dns-duckdns \
         --dns-duckdns-token "$token" \
@@ -94,7 +95,7 @@ while [ ! -e /etc/letsencrypt/live/openfire-equipo4.duckdns.org ]; do
     sudo certbot certonly \
         --non-interactive \
         --agree-tos \
-        --email "$alumno@educantabria.es" \
+        --email "$email" \
         --preferred-challenges dns \
         --authenticator dns-duckdns \
         --dns-duckdns-token "$token" \
@@ -107,7 +108,7 @@ while [ ! -e /etc/letsencrypt/live/openfire-equipo4.duckdns.org-0001 ]; do
 sudo certbot certonly \
         --non-interactive \
         --agree-tos \
-        --email "$alumno@educantabria.es" \
+        --email "$email" \
         --preferred-challenges dns \
         --authenticator dns-duckdns \
         --dns-duckdns-token "$token" \

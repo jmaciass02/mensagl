@@ -28,13 +28,10 @@ fi
 tee /etc/mysql/mysql.conf.d/replication.cnf > /dev/null <<EOF
 [mysqld]
 bind-address = 0.0.0.0
-server-id =$server_id
-binlog_do_db=openfire
+server-id = $server_id
 log_bin = /var/log/mysql/mysql-bin.log
 binlog_format = ROW
 relay-log = /var/log/mysql/mysql-relay-bin
-auto-increment-increment=2
-auto-increment-offset=$server_id
 EOF
 
 # 4. Restart MySQL Service
@@ -90,16 +87,9 @@ EOF
 fi
 
 if [ "$role" = "primary" ]; then
+apt update && DEBIAN_FRONTEND=noninteractive apt install  -y mysql-server
 
-mysql -u root -p"$db_password" <<EOF 
-    CHANGE MASTER TO
-    MASTER_HOST='$secondary_ip',
-    MASTER_USER='$db_user',
-    MASTER_PASSWORD='$db_password',
-    MASTER_LOG_FILE='$binlog_file',
-    MASTER_LOG_POS=$binlog_pos;
-    START SLAVE;
-EOF
+sudo sed -i "s/^bind-address\s*=.*/bind-address = 0.0.0.0/" /etc/mysql/mysql.conf.d/mysqld.cnf
 sudo systemctl restart mysql
 
 sudo mysql -u root -p_Admin123 -e "CREATE DATABASE openfire;"
@@ -107,4 +97,8 @@ sudo mysql -u root -p_Admin123 -e "USE openfire; source /home/ubuntu/openfire.sq
 sudo mysql -u root -p_Admin123 -e "CREATE USER 'openfire'@'%' IDENTIFIED BY '_Admin123';"
 sudo mysql -u root -p_Admin123 -e "GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, ALTER ON openfire.* TO 'openfire'@'%';"
 sudo mysql -u root -p_Admin123 -e "FLUSH PRIVILEGES;"
+
+chmod +x /home/ubuntu/backups.sh
+mkdir /home/ubuntu/backups
+(crontab -l 2>/dev/null; echo "0 3 * * * /home/ubuntu/backups.sh >/dev/null 2>&1") | crontab -
 fi

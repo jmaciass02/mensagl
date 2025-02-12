@@ -28,7 +28,3 @@ mdadm --detail --scan | tee -a /etc/mdadm/mdadm.conf
 
 # Actualizar initramfs
 update-initramfs -u
-
-chmod +x /home/ubuntu/backups.sh
-mkdir /home/ubuntu/backups
-(crontab -l 2>/dev/null; echo "0 3 * * * /home/ubuntu/backups.sh >/dev/null 2>&1") | crontab -

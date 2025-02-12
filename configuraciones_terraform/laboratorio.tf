@@ -43,6 +43,7 @@ provider "aws" {
   region = "us-east-1"
 }
 
+
 # ============================
 # VPC
 # ============================
@@ -206,6 +207,13 @@ resource "aws_security_group" "sg_nginx" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  ingress {
+    from_port   = 3306
+    to_port     = 3306
+    protocol    = "tcp"
+    cidr_blocks = ["10.217.0.0/16"]
+  }
+  
   egress {
     from_port   = 0
     to_port     = 0
@@ -462,8 +470,8 @@ resource "aws_instance" "nginx" {
     }
   }
     provisioner "file" {
-    source      = ".ssh/ssh-mensagl-2025-${var.nombre_alumno}.pem"  # ubicacion del script local
-    destination = "/home/ubuntu/clave.pem"          # destino en el equipo remoto
+    source      = ".ssh/ssh-mensagl-2025-${var.nombre_alumno}.pem"  
+    destination = "/home/ubuntu/clave.pem"          
     connection {
       type                = "ssh"
       user                = "ubuntu"
@@ -471,7 +479,7 @@ resource "aws_instance" "nginx" {
       host                = self.public_ip
     }
   }
-    provisioner "file" {
+  provisioner "file" {
     source      = "../configuraciones_servicios/nginx/default"  
     destination = "/home/ubuntu/default"          
     connection {
@@ -510,7 +518,87 @@ resource "aws_instance" "nginx" {
     aws_vpc.main,
     aws_subnet.public1,
     aws_security_group.sg_nginx,
+    aws_security_group.sg_xmpp,
     aws_key_pair.ssh_key
+  ]
+}
+
+resource "aws_instance" "nginx_fallback" {
+  ami                    = "ami-053b0d53c279acc90"
+  instance_type          = "t2.micro"
+  subnet_id              = aws_subnet.public1.id 
+  key_name               = aws_key_pair.ssh_key.key_name
+  vpc_security_group_ids = [aws_security_group.sg_nginx.id, aws_security_group.sg_xmpp.id]
+  associate_public_ip_address = true
+  private_ip             = "10.217.1.20"
+  
+  provisioner "file" {
+    source      = "../scripts_servicios/nginxfallback.sh"  
+    destination = "/home/ubuntu/nginxfallback.sh"          
+    connection {
+      type                = "ssh"
+      user                = "ubuntu"
+      private_key         = file(".ssh/ssh-mensagl-2025-${var.nombre_alumno}.pem")
+      host                = self.public_ip
+    }
+  }
+
+  provisioner "file" {
+    source      = ".ssh/ssh-mensagl-2025-${var.nombre_alumno}.pem"
+    destination = "/home/ubuntu/clave.pem"          
+    connection {
+      type                = "ssh"
+      user                = "ubuntu"
+      private_key         = file(".ssh/ssh-mensagl-2025-${var.nombre_alumno}.pem")
+      host                = self.public_ip
+    }
+  }
+
+  provisioner "file" {
+    source      = "../configuraciones_servicios/nginx/default"  
+    destination = "/home/ubuntu/default"          
+    connection {
+      type                = "ssh"
+      user                = "ubuntu"
+      private_key         = file(".ssh/ssh-mensagl-2025-${var.nombre_alumno}.pem")
+      host                = self.public_ip
+    }
+  }
+
+  provisioner "file" {
+    source      = "../configuraciones_servicios/nginx/nginx.conf"  
+    destination = "/home/ubuntu/nginx.conf"          
+    connection {
+      type                = "ssh"
+      user                = "ubuntu"
+      private_key         = file(".ssh/ssh-mensagl-2025-${var.nombre_alumno}.pem")
+      host                = self.public_ip
+    }
+  }
+
+  provisioner "remote-exec" {
+    connection {
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = file(".ssh/ssh-mensagl-2025-${var.nombre_alumno}.pem")
+      host        = self.public_ip
+    }
+    inline = [
+      "chmod +x /home/ubuntu/nginxfallback.sh",
+      "sudo /home/ubuntu/nginxfallback.sh"
+    ]
+  }
+  tags = {
+    Name = "Nginx_Fallback"
+  }
+
+  depends_on = [
+    aws_vpc.main,
+    aws_subnet.public1,
+    aws_security_group.sg_nginx,
+    aws_security_group.sg_xmpp,
+    aws_key_pair.ssh_key,
+    aws_instance.nginx
   ]
 }
 
@@ -592,7 +680,7 @@ resource "aws_instance" "Wordpress" {
       "sudo ./wordpress.sh",
       "wait 180",
       "sudo -u www-data wp-cli core config --dbname=wordpress --dbuser=wordpress --dbpass=_Admin123 --dbhost=${aws_db_instance.MySQL_Wordpress.endpoint} --dbprefix=wp --path=/var/www/html",
-      "sudo -u www-data wp-cli core install --url='http://nginxequipo4-5.duckdns.org' --title='Wordpress equipo 4' --admin_user='admin' --admin_password='_Admin123' --admin_email='admin@example.com' --path=/var/www/html",
+      "sudo -u www-data wp-cli core install --url='http://nginx-equipo4.duckdns.org' --title='Wordpress equipo 4' --admin_user='admin' --admin_password='_Admin123' --admin_email='admin@example.com' --path=/var/www/html",
       "sudo -u www-data wp-cli plugin install supportcandy --activate --path='/var/www/html'",
       "sudo -u www-data wp-cli plugin install user-registration --activate --path=/var/www/html",
       "sudo chmod +x wordpress2.sh",
@@ -621,9 +709,6 @@ resource "aws_db_subnet_group" "cms_subnet_group" {
     Name = "mysql-subnet-group"
   }
 }
-
-# Instancia RDS para WORDPRESS
-
 resource "aws_db_instance" "MySQL_Wordpress" {
   allocated_storage    = 10
   storage_type         = "gp2"
@@ -638,15 +723,49 @@ resource "aws_db_instance" "MySQL_Wordpress" {
   availability_zone    = "us-east-1b"  
   db_subnet_group_name = aws_db_subnet_group.cms_subnet_group.name
   vpc_security_group_ids = [aws_security_group.sg_mysql.id]
-  skip_final_snapshot  = true  # PRUEBAS LUEGO ELIMINAR
+  skip_final_snapshot  = true 
+  backup_retention_period = 30 # mantener los backups por 30 dias
   tags = {
     Name = "MySQL_Wordpress"
   }
-  # identificador a la instancia de la base de datos
-  identifier = "mysql-wordpress" 
-  depends_on = [aws_db_subnet_group.cms_subnet_group]
+  identifier = "mysql-wordpress"
+  kms_key_id = aws_kms_key.default.arn   # Aquí se usa la ARN en lugar del ID
+  storage_encrypted = true   # Habilitar la encriptación del almacenamiento
+  depends_on = [aws_db_subnet_group.cms_subnet_group, aws_kms_key.default]
 }
 
+
+#
+# ============================
+# Backups programados de RDS 
+# ============================
+# 
+# Da error pero los backups quedan configurados puede que no se necesite
+#starting RDS Instance Automated Backups Replication (arn:aws:rds:us-east-1:327540127980:db:mysql-wordpress): operation error RDS: StartDBInstanceAutomatedBackupsReplication, https response error StatusCode: 400, RequestID: 6d871039-3472-4770-b654-004adc8c3c55, api error InvalidParameterValue: Feature is not available in region us-east-1.
+# 
+# 
+# resource "aws_db_instance_automated_backups_replication" "default" {
+#   source_db_instance_arn = aws_db_instance.MySQL_Wordpress.arn
+#   kms_key_id             = aws_kms_key.default.arn
+#   retention_period       = 14
+# }
+
+
+# ============================
+# clave KMS para encriptar base de datos de RDS 
+# ============================
+
+resource "aws_kms_key" "default" {
+  description = "clave de encriptacion para RDS"
+  tags = {
+    Name = "rds-backup-key-${var.nombre_alumno}"
+  }
+}
+
+resource "aws_kms_alias" "rds_backup_key_alias" {
+  name          = "alias/rds-backup-key-${var.nombre_alumno}"
+  target_key_id = aws_kms_key.default.id  
+}
 
 
 
@@ -703,7 +822,6 @@ resource "aws_instance" "XMPP-openfire" {
   ]
 }
 
-
 #Base de datos maestro openfire 
 
 resource "aws_instance" "XMPP-database-maestro" {
@@ -740,9 +858,9 @@ resource "aws_instance" "XMPP-database-maestro" {
       bastion_private_key = file("./.ssh/ssh-mensagl-2025-${var.nombre_alumno}.pem")
           }
   }
-  provisioner "file" {
-    source      = "../scripts_servicios/backups.sh"  # script local
-    destination = "/home/ubuntu/backups.sh" # destino
+    provisioner "file" {
+    source      = "../scripts_servicios/clustersql.sh"  # script local
+    destination = "/home/ubuntu/clustersql.sh" # destino
     connection {
       type                = "ssh"
       user                = "ubuntu"
@@ -793,7 +911,19 @@ resource "aws_instance" "XMPP-database-replica" {
       bastion_private_key = file("./.ssh/ssh-mensagl-2025-${var.nombre_alumno}.pem")
           }
   }
-    
+    provisioner "file" {
+    source      = "../scripts_servicios/clustersql.sh"  # script local
+    destination = "/home/ubuntu/clustersql.sh" # destino
+    connection {
+      type                = "ssh"
+      user                = "ubuntu"
+      private_key         = file("./.ssh/ssh-mensagl-2025-${var.nombre_alumno}.pem")
+      host                = self.private_ip
+      bastion_host        = aws_instance.nginx.public_ip
+      bastion_user        = "ubuntu"
+      bastion_private_key = file("./.ssh/ssh-mensagl-2025-${var.nombre_alumno}.pem")
+          }
+  }
     user_data = base64encode(templatefile("../scripts_servicios/clustersql.sh", {
     role           = "secondary"
   }))
@@ -856,6 +986,19 @@ resource "aws_instance" "NAS" {
     provisioner "file" {
     source      = "./.ssh/ssh-mensagl-2025-${var.nombre_alumno}.pem"
     destination = "/home/ubuntu/clave.pem"
+      connection {
+      type                = "ssh"
+      user                = "ubuntu"
+      private_key         = file("./.ssh/ssh-mensagl-2025-${var.nombre_alumno}.pem")
+      host                = self.private_ip
+      bastion_host        = aws_instance.nginx.public_ip
+      bastion_user        = "ubuntu"
+      bastion_private_key = file("./.ssh/ssh-mensagl-2025-${var.nombre_alumno}.pem")
+          }
+  }
+  provisioner "file" {
+    source      = "../scripts_servicios/backups.sh"
+    destination = "/home/ubuntu/backups.sh"
       connection {
       type                = "ssh"
       user                = "ubuntu"
