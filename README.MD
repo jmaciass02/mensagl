@@ -2,7 +2,7 @@
 
 # :shipit: MensAGL Equipo4(5) :shipit: 
 
-<a href="https://github.com/amazona01/AWSCLI">
+<a href="https://github.com/jmaciass02/AWSCLI">
     <img src="recursos/logo.png" alt="Logo" width="200" height="200">
 </a>
   <h3 align="center">💀 Reto ASIR2 2024-25 - Mensagl 💀</h3>
@@ -62,7 +62,7 @@ El reto Mensagl tiene como objetivo la implementación de un servicio de mensaje
 
 1. Clonar el repositorio:  
    ```bash
-   git clone https://github.com/amazona01/mensagl
+   git clone https://github.com/jmaciass02/mensagl
       ```
 2. Cambiar el nombre del alumno en el script de terraform
 3. Cambiar los dominios el nombre y el token utilizados en nginx.sh
@@ -103,11 +103,11 @@ Para más información, contacta con los administradores del repositorio o consu
         <th>Julio</th>
     </tr>
     <tr>
-        <td><img src="https://github.com/amazona01/AWSCLI/blob/main/recursos/alejandro.webp" width="100" height="100" /></td>
-        <td><img src="https://github.com/amazona01/AWSCLI/blob/main/recursos/jose.webp" width="100" height="100" /></td>
-        <td><img src="https://github.com/amazona01/AWSCLI/blob/main/recursos/adrian.webp" width="100" height="100" /></td>
-        <td><img src="https://github.com/amazona01/AWSCLI/blob/main/recursos/diego.webp" width="100" height="100" /></td>
-        <td><img src="https://github.com/amazona01/AWSCLI/blob/main/recursos/julio.webp" width="100" height="100" /></td>
+        <td><img src="https://github.com/jmaciass02/AWSCLI/blob/main/recursos/alejandro.webp" width="100" height="100" /></td>
+        <td><img src="https://github.com/jmaciass02/AWSCLI/blob/main/recursos/jose.webp" width="100" height="100" /></td>
+        <td><img src="https://github.com/jmaciass02/AWSCLI/blob/main/recursos/adrian.webp" width="100" height="100" /></td>
+        <td><img src="https://github.com/jmaciass02/AWSCLI/blob/main/recursos/diego.webp" width="100" height="100" /></td>
+        <td><img src="https://github.com/jmaciass02/AWSCLI/blob/main/recursos/julio.webp" width="100" height="100" /></td>
     </tr>
 </table>
 </div>

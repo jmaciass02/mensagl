@@ -2,8 +2,8 @@
 
 # Variables (Make sure to replace with actual values)
 #cambiar dominios
-wordpress=nginx-equipo4
-openfire=openfire-equipo4
+wordpress=nginx-equipofinal217
+openfire=openfire-equipofinal217
 #cambiar token
 token=7dc394d7-8282-438d-8358-643ed6b1145d
 #cambiar alumno
@@ -33,6 +33,7 @@ chmod 600 /home/ubuntu/clave.pem
 
 # Crear scripts de duckdns
 echo "
+#!/bin/bash
 wordpress=$wordpress
 openfire=$openfire
 token=$token
@@ -53,6 +54,7 @@ fi
 chmod 700 /home/ubuntu/duckdns/duck.sh
 
 echo "
+#!/bin/bash
 wordpress=$wordpress
 openfire=$openfire
 token=$token
@@ -105,6 +107,7 @@ chmod 700 /home/ubuntu/duckdns/duck2.sh
 # añade un cronjob para comprobar si el servicio nginx en el servidor principal esta activo e iniciar el servicio en este si no lo esta
 
 echo "
+#!/bin/bash
 # Check Nginx status on the remote server
 ssh -o StrictHostKeyChecking=no -i /home/ubuntu/clave.pem ubuntu@$nginx_principal 'sudo systemctl is-active nginx' > remote_status.txt
 
@@ -128,3 +131,5 @@ chmod +x /home/ubuntu/fallback.sh
 
 # Add a cron job to run the fallback script every minute
 (crontab -l 2>/dev/null; echo "*/1 * * * * /home/ubuntu/fallback.sh") | crontab -
+sudo systemctl stop nginx
+sudo systemctl disable nginx

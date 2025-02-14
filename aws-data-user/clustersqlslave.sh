@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Variables from Terraform
-role="${role}"
+role="secondary"
 primary_ip="10.217.2.200"
 secondary_ip="10.217.2.201"
 db_user="openfire"

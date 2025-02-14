@@ -5,21 +5,23 @@ upstream openfireapps{
     server 10.217.2.100:7070;
 }
 upstream wordpress{
+    ip_hash;
     server 10.217.3.100:443;
+    server 10.217.3.101:443;
 }
 upstream openfireappsssl{
     server 10.217.2.100:7443;
 }
 server {
     listen 80;
-    server_name nginx-equipo4.duckdns.org;
+    server_name nginx-equipofinal217.duckdns.org;
     return 301 https://\$host\$request_uri;  # Redirect HTTP to HTTPS
 }
 server {
     listen 443 ssl default_server;
-    server_name nginx-equipo4.duckdns.org;
-    ssl_certificate     /etc/letsencrypt/live/nginx-equipo4.duckdns.org/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/nginx-equipo4.duckdns.org/privkey.pem;
+    server_name nginx-equipofinal217.duckdns.org;
+    ssl_certificate     /etc/letsencrypt/live/nginx-equipofinal217.duckdns.org/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/nginx-equipofinal217.duckdns.org/privkey.pem;
   location / {
         proxy_set_header        Host $host:$server_port;
         proxy_set_header        X-Real-IP $remote_addr;
@@ -30,31 +32,31 @@ server {
 }
 server {
     listen 80;
-    server_name openfire-equipo4.duckdns.org;
+    server_name openfire-equipofinal217.duckdns.org;
     return 301 https://\$host\$request_uri;  # Redirect HTTP to HTTPS
 }
 server {
     listen 443 ssl;
-    server_name openfire-equipo4.duckdns.org;
-    ssl_certificate     /etc/letsencrypt/live/openfire-equipo4.duckdns.org/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/openfire-equipo4.duckdns.org/privkey.pem;
+    server_name openfire-equipofinal217.duckdns.org;
+    ssl_certificate     /etc/letsencrypt/live/openfire-equipofinal217.duckdns.org/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/openfire-equipofinal217.duckdns.org/privkey.pem;
   location /chat {
         proxy_pass http://openfireapps/xmppweb;
     }
   location / {
-    return 301 https://openfire-equipo4.duckdns.org/chat;
+    return 301 https://openfire-equipofinal217.duckdns.org/chat;
   }
 }
 server {
     listen 80;
-    server_name admin.openfire-equipo4.duckdns.org;
+    server_name admin.openfire-equipofinal217.duckdns.org;
     return 301 https://\$host\$request_uri;
 }
 server {
     listen 443 ssl;
-    server_name admin.openfire-equipo4.duckdns.org;
-    ssl_certificate     /etc/letsencrypt/live/openfire-equipo4.duckdns.org-0001/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/openfire-equipo4.duckdns.org-0001/privkey.pem;
+    server_name admin.openfire-equipofinal217.duckdns.org;
+    ssl_certificate     /etc/letsencrypt/live/openfire-equipofinal217.duckdns.org-0001/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/openfire-equipofinal217.duckdns.org-0001/privkey.pem;
     location / {
         proxy_pass http://openfireadmin/;
     }
@@ -62,9 +64,9 @@ server {
 
 server {
         listen 7443 ssl;
-        server_name openfire-equipo4.duckdns.org;
-        ssl_certificate     /etc/letsencrypt/live/openfire-equipo4.duckdns.org/fullchain.pem;
-        ssl_certificate_key /etc/letsencrypt/live/openfire-equipo4.duckdns.org/privkey.pem;
+        server_name openfire-equipofinal217.duckdns.org;
+        ssl_certificate     /etc/letsencrypt/live/openfire-equipofinal217.duckdns.org/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/openfire-equipofinal217.duckdns.org/privkey.pem;
     location /ws/ {
         proxy_pass https://openfireappsssl/ws;
         proxy_http_version 1.1;
@@ -80,14 +82,14 @@ server {
 }
 server {
                 listen 443 ssl;
-                server_name llamadas.openfire-equipo4.duckdns.org;
+                server_name llamadas.openfire-equipofinal217.duckdns.org;
                 access_log /var/log/nginx/access_conferencing.log;
                 proxy_set_header Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                 proxy_ssl_verify off;
-                ssl_certificate     /etc/letsencrypt/live/openfire-equipo4.duckdns.org-0001/fullchain.pem;
-                ssl_certificate_key /etc/letsencrypt/live/openfire-equipo4.duckdns.org-0001/privkey.pem;
+                ssl_certificate     /etc/letsencrypt/live/openfire-equipofinal217.duckdns.org-0001/fullchain.pem;
+                ssl_certificate_key /etc/letsencrypt/live/openfire-equipofinal217.duckdns.org-0001/privkey.pem;
                 location /colibri-ws/ {
                         proxy_http_version 1.1;
                         proxy_set_header Upgrade $http_upgrade;

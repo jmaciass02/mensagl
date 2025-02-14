@@ -1,21 +1,27 @@
 #!/bin/bash
 #cambiar dominios
-wordpress=nginx-equipo4
-openfire=openfire-equipo4
+wordpress=nginx-equipofinal217
+openfire=openfire-equipofinal217
 #cambiar token
 token=7dc394d7-8282-438d-8358-643ed6b1145d
 #cambiar alumno
 alumno=jmaciass02
+#cambiar ips de los servidores
+nginx_principal="10.217.1.10"
+nginx_secundario="10.217.1.20"
 
 chmod 600 clave.pem
-
 mkdir -p "/home/ubuntu/duckdns/"
 cd "/home/ubuntu/duckdns/"
 
 sudo apt update && sudo  DEBIAN_FRONTEND=noninteractive apt install nginx -y
+echo "url=https://www.duckdns.org/update?domains=$wordpress&token=$token&ip=" | curl -k -o /home/ubuntu/duckdns/duck.log -K -
+echo "url=https://www.duckdns.org/update?domains=$openfire&token=$token&ip=" | curl -k -o /home/ubuntu/duckdns/duck.log -K -
+
 
 # Crear scripts de duckdns
 echo "
+#!/bin/bash
 wordpress=$wordpress
 openfire=$openfire
 token=$token
@@ -36,6 +42,7 @@ fi
 chmod 700 /home/ubuntu/duckdns/duck.sh
 
 echo "
+#!bin/bash
 wordpress=$wordpress
 openfire=$openfire
 token=$token
@@ -77,12 +84,12 @@ sudo mv /home/ubuntu/nginx.conf /etc/nginx/nginx.conf
 #Restart Nginx
 sudo systemctl stop nginx
 
-while [ ! -e /etc/letsencrypt/live/nginx-equipo4	.duckdns.org ]; do
+while [ ! -e /etc/letsencrypt/live/$wordpress.duckdns.org ]; do
     
     sudo certbot certonly \
         --non-interactive \
         --agree-tos \
-        --email "$email" \
+        --email "$alumno@educantabria.es" \
         --preferred-challenges dns \
         --authenticator dns-duckdns \
         --dns-duckdns-token "$token" \
@@ -90,12 +97,12 @@ while [ ! -e /etc/letsencrypt/live/nginx-equipo4	.duckdns.org ]; do
         -d "$wordpress.duckdns.org"
 
 done
-while [ ! -e /etc/letsencrypt/live/openfire-equipo4.duckdns.org ]; do
+while [ ! -e /etc/letsencrypt/live/$openfire.duckdns.org ]; do
     
     sudo certbot certonly \
         --non-interactive \
         --agree-tos \
-        --email "$email" \
+        --email "$alumno@educantabria.es" \
         --preferred-challenges dns \
         --authenticator dns-duckdns \
         --dns-duckdns-token "$token" \
@@ -103,12 +110,12 @@ while [ ! -e /etc/letsencrypt/live/openfire-equipo4.duckdns.org ]; do
         -d "$openfire.duckdns.org"
 
 done
-while [ ! -e /etc/letsencrypt/live/openfire-equipo4.duckdns.org-0001 ]; do
+while [ ! -e /etc/letsencrypt/live/$openfire.duckdns.org-0001 ]; do
     
 sudo certbot certonly \
         --non-interactive \
         --agree-tos \
-        --email "$email" \
+        --email "$alumno@educantabria.es" \
         --preferred-challenges dns \
         --authenticator dns-duckdns \
         --dns-duckdns-token "$token" \
@@ -130,6 +137,7 @@ sudo chmod -R 770 /home/ubuntu
 sudo systemctl start nginx
 
 echo "
+#!/bin/bash
 # Check Nginx status on the remote server
 ssh -o StrictHostKeyChecking=no -i /home/ubuntu/clave.pem ubuntu@$nginx_secundario 'sudo systemctl is-active nginx' > remote_status.txt
 

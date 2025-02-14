@@ -2,12 +2,12 @@
 
 # Variables (Make sure to replace with actual values)
 #cambiar dominios
-wordpress=nginx-equipo4
-openfire=openfire-equipo4
+wordpress=nginx-equipofinal217
+openfire=openfire-equipofinal217
 #cambiar token
 token=7dc394d7-8282-438d-8358-643ed6b1145d
 #cambiar alumno
-alumno=amazona01
+alumno=jmaciass02
 #cambiar ips de los servidores
 nginx_principal="10.217.1.10"
 nginx_secundario="10.217.1.20"
@@ -18,7 +18,7 @@ chmod 600 /home/ubuntu/clave.pem
     cd "/home/ubuntu/duckdns/"
 
     # Instalar paquetes
-    sudo apt update && sudo DEBIAN_FRONTEND=noninteractive apt install nginx-full python3-pip -y
+    sudo apt update &&  sudo DEBIAN_FRONTEND=noninteractive apt install nginx-full python3-pip coturn -y
     sudo snap install --classic certbot
     sudo ln -s /snap/bin/certbot /usr/bin/certbot
     pip install certbot-dns-duckdns
@@ -33,6 +33,7 @@ chmod 600 /home/ubuntu/clave.pem
 
 # Crear scripts de duckdns
 echo "
+#!/bin/bash
 wordpress=$wordpress
 openfire=$openfire
 token=$token
@@ -53,6 +54,7 @@ fi
 chmod 700 /home/ubuntu/duckdns/duck.sh
 
 echo "
+#!/bin/bash
 wordpress=$wordpress
 openfire=$openfire
 token=$token
@@ -105,6 +107,7 @@ chmod 700 /home/ubuntu/duckdns/duck2.sh
 # añade un cronjob para comprobar si el servicio nginx en el servidor principal esta activo e iniciar el servicio en este si no lo esta
 
 echo "
+#!/bin/bash
 # Check Nginx status on the remote server
 ssh -o StrictHostKeyChecking=no -i /home/ubuntu/clave.pem ubuntu@$nginx_principal 'sudo systemctl is-active nginx' > remote_status.txt
 
@@ -128,3 +131,23 @@ chmod +x /home/ubuntu/fallback.sh
 
 # Add a cron job to run the fallback script every minute
 (crontab -l 2>/dev/null; echo "*/1 * * * * /home/ubuntu/fallback.sh") | crontab -
+sudo systemctl stop nginx
+sudo systemctl disable nginx
+
+
+sudo chown -R www-data:turnserver /etc/letsencrypt/archive/
+sudo chmod -R 770 /etc/letsencrypt/archive/
+sudo echo "syslog
+realm=llamadas.$openfire.duckdns.org
+listening-port=3478
+tls-listening-port=5349
+relay-threads=0
+min-port=50000
+max-port=50010
+no-tcp
+no-tcp-relay
+cert="/etc/letsencrypt/live/$openfire.duckdns.org-0001/fullchain.pem"
+pkey="/etc/letsencrypt/live/$openfire.duckdns.org-0001/privkey.pem"
+" > /etc/turnserver.conf
+sudo systemctl restart coturn  
+sudo systemctl enable coturn  
