@@ -1,72 +1,133 @@
-AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Infraestructura en AWS basada en el script Bash proporcionado'
-
+Description: Plantilla de CloudFormation para crear la infraestructura especificada
 Parameters:
   NombreAlumno:
     Type: String
     Default: "josems"
   Region:
-    Type: AWS::EC2::Region
-    Default: "us-east-1"
-  AMIId:
-    Type: AWS::EC2::Image::Id
-    Default: "ami-053b0d53c279acc90"
-  InstanceType:
     Type: String
-    Default: "t2.micro"
+    Default: "us-east-1"
   Red:
-    Type: Number
-    Default: 218
-
+    Type: String
+    Default: "217"
 Resources:
   VPC:
     Type: AWS::EC2::VPC
     Properties:
       CidrBlock: !Sub "10.${Red}.0.0/16"
-      EnableDnsSupport: true
-      EnableDnsHostnames: true
       Tags:
         - Key: Name
-          Value: !Sub "vpc-mensagl-2025-${NombreAlumno}"
-
+          Value: !Sub "vpc-mensagl-2025-${NombreAlumno}-vpc"
   InternetGateway:
     Type: AWS::EC2::InternetGateway
     Properties:
       Tags:
         - Key: Name
           Value: !Sub "vpc-mensagl-2025-${NombreAlumno}-igw"
-
   AttachGateway:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
       VpcId: !Ref VPC
       InternetGatewayId: !Ref InternetGateway
-
-  PublicSubnet:
+  SubnetPublic1:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
       CidrBlock: !Sub "10.${Red}.1.0/24"
-      MapPublicIpOnLaunch: true
-      AvailabilityZone: !Select [ 0, !GetAZs "" ]
+      AvailabilityZone: !Sub "${Region}a"
       Tags:
         - Key: Name
-          Value: !Sub "vpc-mensagl-2025-${NombreAlumno}-subnet-public"
-
-  PrivateSubnet:
+          Value: !Sub "vpc-mensagl-2025-${NombreAlumno}-subnet-public1-${Region}a"
+  SubnetPrivate1:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
       CidrBlock: !Sub "10.${Red}.2.0/24"
-      AvailabilityZone: !Select [ 1, !GetAZs "" ]
+      AvailabilityZone: !Sub "${Region}a"
       Tags:
         - Key: Name
-          Value: !Sub "vpc-mensagl-2025-${NombreAlumno}-subnet-private"
-
-  SecurityGroup:
+          Value: !Sub "vpc-mensagl-2025-${NombreAlumno}-subnet-private1-${Region}a"
+  SubnetPrivate2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Sub "10.${Red}.3.0/24"
+      AvailabilityZone: !Sub "${Region}b"
+      Tags:
+        - Key: Name
+          Value: !Sub "vpc-mensagl-2025-${NombreAlumno}-subnet-private2-${Region}b"
+  RouteTablePublic:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "vpc-mensagl-2025-${NombreAlumno}-rtb-public"
+  RoutePublic:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref RouteTablePublic
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+  SubnetRouteTableAssociationPublic:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref SubnetPublic1
+      RouteTableId: !Ref RouteTablePublic
+  ElasticIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub "vpc-mensagl-2025-${NombreAlumno}-eip"
+  NatGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt ElasticIP.AllocationId
+      SubnetId: !Ref SubnetPublic1
+      Tags:
+        - Key: Name
+          Value: !Sub "vpc-mensagl-2025-${NombreAlumno}-nat"
+  RouteTablePrivate1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "vpc-mensagl-2025-${NombreAlumno}-rtb-private1-${Region}a"
+  RoutePrivate1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref RouteTablePrivate1
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway
+  SubnetRouteTableAssociationPrivate1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref SubnetPrivate1
+      RouteTableId: !Ref RouteTablePrivate1
+  RouteTablePrivate2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "vpc-mensagl-2025-${NombreAlumno}-rtb-private2-${Region}b"
+  RoutePrivate2:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref RouteTablePrivate2
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway
+  SubnetRouteTableAssociationPrivate2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref SubnetPrivate2
+      RouteTableId: !Ref RouteTablePrivate2
+  SecurityGroupNginx:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: "Grupo de seguridad para instancias EC2"
+      GroupDescription: "Grupo de seguridad para nginx"
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -77,33 +138,267 @@ Resources:
           FromPort: 80
           ToPort: 80
           CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          CidrIp: !Sub "10.${Red}.0.0/16"
       Tags:
         - Key: Name
-          Value: "sg-ec2"
-
-  EC2Instance:
+          Value: sg_nginx
+  SecurityGroupCMS:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Security group for CMS cluster"
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: sg_cms
+  SecurityGroupMySQL:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Grupo de seguridad para MySQL"
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: sg_mysql
+  SecurityGroupNAS:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Grupo de seguridad para NAS"
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: sg_nas
+  SecurityGroupXMPP:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Grupo de seguridad para XMPP Openfire"
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 5222
+          ToPort: 5223
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 9090
+          ToPort: 9091
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 7777
+          ToPort: 7777
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 5262
+          ToPort: 5263
+          CidrIp: 0.0.0.0/
+Resources:
+  NginxInstance:
     Type: AWS::EC2::Instance
     Properties:
-      ImageId: !Ref AMIId
       InstanceType: !Ref InstanceType
-      SubnetId: !Ref PublicSubnet
+      KeyName: !Ref KeyName
+      SubnetId: !Ref SubnetPublic1
+      ImageId: !Ref AMIID
       SecurityGroupIds:
-        - !Ref SecurityGroup
-      KeyName: !Sub "ssh-mensagl-2025-${NombreAlumno}"
+        - !Ref SecurityGroupNginx
+        - !Ref SecurityGroupXMPP
+      PrivateIpAddress: !Sub "10.${Red}.1.10"
       Tags:
         - Key: Name
-          Value: "EC2Instance"
-
-Outputs:
-  VPCID:
-    Description: "ID de la VPC creada"
-    Value: !Ref VPC
-  PublicSubnetID:
-    Description: "ID de la Subnet Pública"
-    Value: !Ref PublicSubnet
-  PrivateSubnetID:
-    Description: "ID de la Subnet Privada"
-    Value: !Ref PrivateSubnet
-  InstanceID:
-    Description: "ID de la instancia EC2 creada"
-    Value: !Ref EC2Instance
+          Value: "Nginx"
+  NginxFallbackInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      SubnetId: !Ref SubnetPublic1
+      ImageId: !Ref AMIID
+      SecurityGroupIds:
+        - !Ref SecurityGroupNginx
+        - !Ref SecurityGroupXMPP
+      PrivateIpAddress: !Sub "10.${Red}.1.20"
+      Tags:
+        - Key: Name
+          Value: "Nginx_Fallback"
+  KMSKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: "Key for WordPress"
+      EnableKeyRotation: true
+      Tags:
+        - TagKey: Name
+          TagValue: "wordpress-key"
+  KMSAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: alias/wordpress-key
+      TargetKeyId: !Ref KMSKey
+  RDSDBInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: "wordpress-db"
+      DBInstanceClass: db.t3.micro
+      Engine: mysql
+      MasterUsername: admin
+      MasterUserPassword: _admin123
+      AllocatedStorage: 20
+      VPCSecurityGroups: 
+        - !Ref SecurityGroupMySQL
+      DBSubnetGroupName: wp-rds-subnet-group
+      AvailabilityZone: !Sub "${Region}a"
+      BackupRetentionPeriod: 30
+      MultiAZ: false
+      PubliclyAccessible: false
+      StorageType: gp2
+      Tags:
+        - Key: Name
+          Value: "wordpress-db"
+  RDSSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupName: wp-rds-subnet-group
+      DBSubnetGroupDescription: "RDS Subnet Group"
+      SubnetIds:
+        - !Ref SubnetPrivate1
+        - !Ref SubnetPrivate2
+    WordpressInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      SubnetId: !Ref SubnetPrivate2
+      ImageId: !Ref AMIID
+      SecurityGroupIds:
+        - !Ref SecurityGroupCMS
+      PrivateIpAddress: !Sub "10.${Red}.3.100"
+      Tags:
+        - Key: Name
+          Value: "WORDPRESS"
+  WordpressFallbackInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      SubnetId: !Ref SubnetPrivate2
+      ImageId: !Ref AMIID
+      SecurityGroupIds:
+        - !Ref SecurityGroupCMS
+      PrivateIpAddress: !Sub "10.${Red}.3.101"
+      Tags:
+        - Key: Name
+          Value: "WORDPRESS-2"
+  XMPPInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      SubnetId: !Ref SubnetPrivate1
+      ImageId: !Ref AMIID
+      SecurityGroupIds:
+        - !Ref SecurityGroupXMPP
+      PrivateIpAddress: !Sub "10.${Red}.2.100"
+      Tags:
+        - Key: Name
+          Value: "OPENFIRE"
+  XMPPDBMasterInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      SubnetId: !Ref SubnetPrivate1
+      ImageId: !Ref AMIID
+      SecurityGroupIds:
+        - !Ref SecurityGroupMySQL
+      PrivateIpAddress: !Sub "10.${Red}.2.200"
+      Tags:
+        - Key: Name
+          Value: "Mysql_Openfire_maestro"
+  XMPPDBReplicaInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      SubnetId: !Ref SubnetPrivate1
+      ImageId: !Ref AMIID
+      SecurityGroupIds:
+        - !Ref SecurityGroupMySQL
+      PrivateIpAddress: !Sub "10.${Red}.2.201"
+      Tags:
+        - Key: Name
+          Value: "Mysql_Openfire_esclavo"
+  Volume1:
+    Type: AWS::EC2::Volume
+    Properties:
+      AvailabilityZone: !Sub "${Region}a"
+      Size: 20
+      Tags:
+        - Key: Name
+          Value: !Sub "backup-volume-1-${NombreAlumno}"
+  Volume2:
+    Type: AWS::EC2::Volume
+    Properties:
+      AvailabilityZone: !Sub "${Region}a"
+      Size: 20
+      Tags:
+        - Key: Name
+          Value: !Sub "backup-volume-2-${NombreAlumno}"
+  NASInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      SubnetId: !Ref SubnetPrivate1
+      ImageId: !Ref AMIID
+      SecurityGroupIds:
+        - !Ref SecurityGroupNAS
+      PrivateIpAddress: !Sub "10.${Red}.2.150"
+      Tags:
+        - Key: Name
+          Value: "NAS"
+  AttachVolume1:
+    Type: AWS::EC2::VolumeAttachment
+    Properties:
+      Device: /dev/sdf
+      InstanceId: !Ref NASInstance
+      VolumeId: !Ref Volume1
+  AttachVolume2:
+    Type: AWS::EC2::VolumeAttachment
+    Properties:
+      Device: /dev/sdg
+      InstanceId: !Ref NASInstance
+      VolumeId: !Ref

@@ -3,7 +3,7 @@
 # Variables
 NOMBRE_ALUMNO="josems"
 REGION="us-east-1"
-RED="218"
+RED="217"
 # Create VPC
 VPC_ID=$(aws ec2 create-vpc --cidr-block 10.$RED.0.0/16 --region $REGION --query 'Vpc.VpcId' --output text)
 

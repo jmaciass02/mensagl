@@ -7,7 +7,7 @@ AMI_ID="ami-053b0d53c279acc90"
 INSTANCE_TYPE="t2.micro"
 KEY_NAME="ssh-mensagl-2025-$NOMBRE_ALUMNO"
 PRIVATE_KEY_PATH="./.ssh/ssh-mensagl-2025-$NOMBRE_ALUMNO.pem"
-RED="218"
+RED="217"
 
 # ============================
 # Archivo de log
@@ -258,7 +258,7 @@ sudo chmod +x wordpress.sh
 sudo ./wordpress.sh
 wait 180
 sudo -u www-data wp-cli core config --dbname=wordpress --dbuser=wordpress --dbpass=_Admin123 --dbhost=${RDS_ENDPOINT} --dbprefix=wp --path=/var/www/html
-sudo -u www-data wp-cli core install --url='http://wordpress-test218.duckdns.org' --title='Wordpress equipo 4' --admin_user='equipo4' --admin_password='_Admin123' --admin_email='admin@example.com' --path=/var/www/html
+sudo -u www-data wp-cli core install --url='http://wordpress-test217.duckdns.org' --title='Wordpress equipo 4' --admin_user='equipo4' --admin_password='_Admin123' --admin_email='admin@example.com' --path=/var/www/html
 sudo -u www-data wp-cli plugin install supportcandy --activate --path='/var/www/html'
 sudo -u www-data wp-cli plugin install user-registration --activate --path='/var/www/html'
 sudo -u www-data wp-cli plugin install wps-hide-login --activate --path='/var/www/html'
@@ -293,7 +293,7 @@ sudo chmod +x wordpress.sh
 sudo ./wordpress.sh
 wait 180
 sudo -u www-data wp-cli core config --dbname=wordpress --dbuser=wordpress --dbpass=_Admin123 --dbhost=${aws_db_instance.MySQL_Wordpress.endpoint} --dbprefix=wp --path=/var/www/html
-sudo -u www-data wp-cli core install --url='http://wordpress-test218.duckdns.org' --title='Wordpress equipo 4' --admin_user='admin' --admin_password='_Admin123' --admin_email='admin@example.com' --path=/var/www/html
+sudo -u www-data wp-cli core install --url='http://wordpress-test217.duckdns.org' --title='Wordpress equipo 4' --admin_user='admin' --admin_password='_Admin123' --admin_email='admin@example.com' --path=/var/www/html
 sudo -u www-data wp-cli plugin install supportcandy --activate --path='/var/www/html'
 sudo -u www-data wp-cli plugin install user-registration --activate --path='/var/www/html'
 sudo -u www-data wp-cli plugin install wps-hide-login --activate --path='/var/www/html'

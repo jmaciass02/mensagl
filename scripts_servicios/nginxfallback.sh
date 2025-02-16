@@ -68,7 +68,7 @@ local_status=\$(sudo systemctl is-active nginx)
 # Only execute DuckDNS update if Nginx is running locally and not remotely
 if [[ \"\$local_status\" == \"active\" && \"\$remote_status\" != \"active\" ]]; then
         echo url=\"https://www.duckdns.org/update?domains=$openfire&token=$token&ip=\" | curl -k -o /home/ubuntu/duckdns/duck.log -K -
-        echo url=\"https://www.duckdns.org/update?domains=nginxlocal218&token=$token&ip=10.217.1.20\" | curl -k -o /home/ubuntu/duckdns/duck.log -K -
+        echo url=\"https://www.duckdns.org/update?domains=nginxlocal217&token=$token&ip=10.217.1.20\" | curl -k -o /home/ubuntu/duckdns/duck.log -K -
 else
     exit 1
 fi
