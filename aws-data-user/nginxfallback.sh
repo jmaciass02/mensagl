@@ -2,8 +2,8 @@
 
 # Variables (Make sure to replace with actual values)
 #cambiar dominios
-wordpress=nginx-equipofinal217
-openfire=openfire-equipofinal217
+wordpress=nginx-equipofinal-217
+openfire=openfire-equipofinal-217
 #cambiar token
 token=7dc394d7-8282-438d-8358-643ed6b1145d
 #cambiar alumno
@@ -18,7 +18,7 @@ chmod 600 /home/ubuntu/clave.pem
     cd "/home/ubuntu/duckdns/"
 
     # Instalar paquetes
-    sudo apt update && sudo DEBIAN_FRONTEND=noninteractive apt install nginx-full python3-pip -y
+    sudo apt update && sudo DEBIAN_FRONTEND=noninteractive apt install nginx-full coturn python3-pip -y
     sudo snap install --classic certbot
     sudo ln -s /snap/bin/certbot /usr/bin/certbot
     pip install certbot-dns-duckdns
@@ -133,3 +133,21 @@ chmod +x /home/ubuntu/fallback.sh
 (crontab -l 2>/dev/null; echo "*/1 * * * * /home/ubuntu/fallback.sh") | crontab -
 sudo systemctl stop nginx
 sudo systemctl disable nginx
+
+
+sudo chown -R www-data:turnserver /etc/letsencrypt/live/
+sudo chmod -R 770 /etc/letsencrypt/live/
+sudo echo "syslog
+realm=llamadas.$openfire.duckdns.org
+listening-port=3478
+tls-listening-port=5349
+relay-threads=0
+min-port=50000
+max-port=50010
+no-tcp
+no-tcp-relay
+cert="/etc/letsencrypt/live/$openfire.duckdns.org-0001/fullchain.pem"
+pkey="/etc/letsencrypt/live/$openfire.duckdns.org-0001/privkey.pem"
+" > /etc/turnserver.conf
+sudo systemctl restart coturn  
+sudo systemctl enable coturn  

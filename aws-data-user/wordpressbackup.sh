@@ -1,7 +1,7 @@
 # =================================================================================================================================================================================
 # necesita haber hecho wordpress.sh y despues estos comandos antes de ejecutarse pero para ello necesitas el endpoint del RDS  esta automatizado para ello en el script de terraform
 #      "sudo -u www-data wp-cli core config --dbname=wordpress --dbuser=wordpress --dbpass=_Admin123 --dbhost=${aws_db_instance.MySQL_Wordpress.endpoint} --dbprefix=wp --path=/var/www/html",
-#      "sudo -u www-data wp-cli core install --url='http://nginx-equipofinal217	.duckdns.org' --title='Wordpress equipo 4' --admin_user='admin' --admin_password='_Admin123' --admin_email='admin@example.com' --path=/var/www/html",
+#      "sudo -u www-data wp-cli core install --url='http://nginx-equipofinal-217	.duckdns.org' --title='Wordpress equipo 4' --admin_user='admin' --admin_password='_Admin123' --admin_email='admin@example.com' --path=/var/www/html",
 #      "sudo -u www-data wp-cli plugin install supportcandy --activate --path='/var/www/html'",
 #      "sudo -u www-data wp-cli plugin install user-registration --activate --path=/var/www/html",
 #      "sudo -u www-data wp-cli plugin install wps-hide-login --activate",
@@ -24,9 +24,9 @@ sudo sed -i '1i\
     $list = explode(",", $_SERVER["HTTP_X_FORWARDED_FOR"]);\
     $_SERVER["REMOTE_ADDR"] = $list[0];\
 }\
-$_SERVER["HTTP_HOST"] = "nginx-equipofinal217.duckdns.org";\
-$_SERVER["REMOTE_ADDR"] = "nginx-equipofinal217.duckdns.org";\
-$_SERVER["SERVER_ADDR"] = "nginx-equipofinal217.duckdns.org";\
+$_SERVER["HTTP_HOST"] = "nginx-equipofinal-217.duckdns.org";\
+$_SERVER["REMOTE_ADDR"] = "nginx-equipofinal-217.duckdns.org";\
+$_SERVER["SERVER_ADDR"] = "nginx-equipofinal-217.duckdns.org";\
 ' /var/www/html/wp-config.php
 
 

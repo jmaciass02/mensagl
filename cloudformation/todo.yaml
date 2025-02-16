@@ -1,0 +1,164 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Infraestructura completa en AWS basada en el script Bash proporcionado'
+
+Parameters:
+  NombreAlumno:
+    Type: String
+    Default: "josems"
+  Region:
+    Type: AWS::EC2::Region
+    Default: "us-east-1"
+  AMIId:
+    Type: AWS::EC2::Image::Id
+    Default: "ami-053b0d53c279acc90"
+  InstanceType:
+    Type: String
+    Default: "t2.micro"
+  Red:
+    Type: Number
+    Default: 218
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Sub "10.${Red}.0.0/16"
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub "vpc-mensagl-2025-${NombreAlumno}"
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub "vpc-mensagl-2025-${NombreAlumno}-igw"
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Sub "10.${Red}.1.0/24"
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [ 0, !GetAZs "" ]
+      Tags:
+        - Key: Name
+          Value: !Sub "vpc-mensagl-2025-${NombreAlumno}-subnet-public"
+
+  PrivateSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Sub "10.${Red}.2.0/24"
+      AvailabilityZone: !Select [ 1, !GetAZs "" ]
+      Tags:
+        - Key: Name
+          Value: !Sub "vpc-mensagl-2025-${NombreAlumno}-subnet-private"
+
+  ElasticIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  NATGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      AllocationId: !GetAtt ElasticIP.AllocationId
+      Tags:
+        - Key: Name
+          Value: !Sub "nat-gateway-${NombreAlumno}"
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Grupo de seguridad para instancias EC2"
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: "sg-ec2"
+
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AMIId
+      InstanceType: !Ref InstanceType
+      SubnetId: !Ref PublicSubnet
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      KeyName: !Sub "ssh-mensagl-2025-${NombreAlumno}"
+      Tags:
+        - Key: Name
+          Value: "EC2Instance"
+
+  RDSInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: wordpress-db
+      DBInstanceClass: db.t2.micro
+      Engine: mysql
+      MasterUsername: admin
+      MasterUserPassword: "_admin123"
+      AllocatedStorage: 20
+      VPCSecurityGroups:
+        - !Ref SecurityGroup
+      AvailabilityZone: !Select [ 1, !GetAZs "" ]
+      BackupRetentionPeriod: 30
+      PubliclyAccessible: false
+      StorageType: gp2
+      Tags:
+        - Key: Name
+          Value: "wordpress-db"
+
+  EBSVolume:
+    Type: AWS::EC2::Volume
+    Properties:
+      AvailabilityZone: !Select [ 0, !GetAZs "" ]
+      Size: 20
+      Tags:
+        - Key: Name
+          Value: !Sub "backup-volume-${NombreAlumno}"
+
+Outputs:
+  VPCID:
+    Description: "ID de la VPC creada"
+    Value: !Ref VPC
+  PublicSubnetID:
+    Description: "ID de la Subnet Pública"
+    Value: !Ref PublicSubnet
+  PrivateSubnetID:
+    Description: "ID de la Subnet Privada"
+    Value: !Ref PrivateSubnet
+  InstanceID:
+    Description: "ID de la instancia EC2 creada"
+    Value: !Ref EC2Instance
+  RDSInstanceID:
+    Description: "ID de la instancia RDS creada"
+    Value: !Ref RDSInstance
+  NATGatewayID:
+    Description: "ID del NAT Gateway"
+    Value: !Ref NATGateway
+  EBSVolumeID:
+    Description: "ID del volumen EBS"
+    Value: !Ref EBSVolume

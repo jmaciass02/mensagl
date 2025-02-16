@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x # para activar el modo debug y tener mas feedback
 # Variables
 NOMBRE_ALUMNO="josems"
 REGION="us-east-1"
@@ -136,8 +137,12 @@ aws ec2 authorize-security-group-ingress --group-id $SG_XMPP_ID --protocol tcp -
 aws ec2 authorize-security-group-ingress --group-id $SG_XMPP_ID --protocol tcp --port 7443 --cidr 0.0.0.0/0
 aws ec2 authorize-security-group-ingress --group-id $SG_XMPP_ID --protocol tcp --port 7070 --cidr 0.0.0.0/0
 aws ec2 authorize-security-group-ingress --group-id $SG_XMPP_ID --protocol udp --port 26001-27000 --cidr 0.0.0.0/0
-aws ec2 authorize-security-group-ingress --group-id $SG_XMPP_ID --protocol udp --port 50000-55000 --cidr 0.0.0.0/0
-aws ec2 authorize-security-group-ingress --group-id $SG_XMPP_ID --protocol udp --port 9999 --cidr 0.0.0.0/0
+aws ec2 authorize-security-group-ingress --group-id $SG_XMPP_ID --protocol udp --port 50000-50010 --cidr 0.0.0.0/0
+aws ec2 authorize-security-group-ingress --group-id $SG_XMPP_ID --protocol udp --port 5349 --cidr 0.0.0.0/0
+aws ec2 authorize-security-group-ingress --group-id $SG_XMPP_ID --protocol udp --port 3478 --cidr 0.0.0.0/0
+aws ec2 authorize-security-group-ingress --group-id $SG_XMPP_ID --protocol tcp --port 5349 --cidr 0.0.0.0/0
+aws ec2 authorize-security-group-ingress --group-id $SG_XMPP_ID --protocol tcp --port 3478 --cidr 0.0.0.0/0
+
 aws ec2 create-tags --resources $SG_XMPP_ID --tags Key=Name,Value="sg_xmpp"
 
 
@@ -197,21 +202,36 @@ aws kms tag-resource --key-id $KMS_KEY_ID --tags TagKey=Name,TagValue="wordpress
 # ============================
 # Instancia RDS
 # ============================
+# Crear subnet RD
+aws rds create-db-subnet-group \
+    --db-subnet-group-name wp-rds-subnet-group \
+    --db-subnet-group-description "RDS Subnet Group" \
+    --subnet-ids "$SUBNET_PRIVATE1_ID" "$SUBNET_PRIVATE2_ID"
+
 aws rds create-db-instance \
     --db-instance-identifier wordpress-db \
-    --db-instance-class db.t2.micro \
+    --db-instance-class db.t3.micro \
     --engine mysql \
     --master-username admin \
     --master-user-password _admin123 \
     --allocated-storage 20 \
     --vpc-security-group-ids $SG_MYSQL_ID \
+    --db-subnet-group-name wp-rds-subnet-group \
     --availability-zone ${REGION}a \
     --backup-retention-period 30 \
     --no-multi-az \
-    --publicly-accessible false \
+    --no-publicly-accessible \
     --storage-type gp2 \
     --tags Key=Name,Value="wordpress-db"
+aws rds wait db-instance-available --db-instance-identifier "wordpress-db"
 
+# Recibe el RDS ENDPOINT PARA USARLO MAS ADELANTE
+RDS_ENDPOINT=$(aws rds describe-db-instances \
+    --db-instance-identifier "wordpress-db" \
+    --query 'DBInstances[0].Endpoint.Address' \
+    --output text)
+
+echo "RDS Endpoint: $RDS_ENDPOINT"
 # ============================
 # Wordpress maestro
 # ============================
@@ -237,7 +257,7 @@ cd ~
 sudo chmod +x wordpress.sh
 sudo ./wordpress.sh
 wait 180
-sudo -u www-data wp-cli core config --dbname=wordpress --dbuser=wordpress --dbpass=_Admin123 --dbhost=${aws_db_instance.MySQL_Wordpress.endpoint} --dbprefix=wp --path=/var/www/html
+sudo -u www-data wp-cli core config --dbname=wordpress --dbuser=wordpress --dbpass=_Admin123 --dbhost=${RDS_ENDPOINT} --dbprefix=wp --path=/var/www/html
 sudo -u www-data wp-cli core install --url='http://wordpress-test218.duckdns.org' --title='Wordpress equipo 4' --admin_user='equipo4' --admin_password='_Admin123' --admin_email='admin@example.com' --path=/var/www/html
 sudo -u www-data wp-cli plugin install supportcandy --activate --path='/var/www/html'
 sudo -u www-data wp-cli plugin install user-registration --activate --path='/var/www/html'
@@ -317,6 +337,7 @@ XMPP_DB_MASTER_PRIVATE_IP=$(aws ec2 describe-instances --instance-ids $XMPP_DB_M
 # Copy scripts and configuration files to the instance via bastion host (Nginx)
 scp -i $PRIVATE_KEY_PATH -o StrictHostKeyChecking=no -o ProxyCommand="ssh -W %h:%p -i $PRIVATE_KEY_PATH -o StrictHostKeyChecking=no ubuntu@$NGINX_PUBLIC_IP" ../configuraciones_servicios/openfire/openfire.sql ubuntu@$XMPP_DB_MASTER_PRIVATE_IP:/home/ubuntu/openfire.sql
 scp -i $PRIVATE_KEY_PATH -o StrictHostKeyChecking=no -o ProxyCommand="ssh -W %h:%p -i $PRIVATE_KEY_PATH -o StrictHostKeyChecking=no ubuntu@$NGINX_PUBLIC_IP" ../aws-data-user/clustersqlmaster.sh ubuntu@$XMPP_DB_MASTER_PRIVATE_IP:/home/ubuntu/clustersql.sh
+scp -i $PRIVATE_KEY_PATH -o StrictHostKeyChecking=no -o ProxyCommand="ssh -W %h:%p -i $PRIVATE_KEY_PATH -o StrictHostKeyChecking=no ubuntu@$NGINX_PUBLIC_IP" $PRIVATE_KEY_PATH ubuntu@$XMPP_DB_MASTER_PRIVATE_IP:/home/ubuntu/clave.pem
 
 # Execute the script on the instance via bastion host (Nginx)
 ssh -i $PRIVATE_KEY_PATH -o StrictHostKeyChecking=no -o ProxyCommand="ssh -W %h:%p -i $PRIVATE_KEY_PATH -o StrictHostKeyChecking=no ubuntu@$NGINX_PUBLIC_IP" ubuntu@$XMPP_DB_MASTER_PRIVATE_IP "chmod +x /home/ubuntu/clustersql.sh && sudo /home/ubuntu/clustersql.sh"
@@ -336,6 +357,7 @@ XMPP_DB_REPLICA_PRIVATE_IP=$(aws ec2 describe-instances --instance-ids $XMPP_DB_
 
 # Copy scripts and configuration files to the instance via bastion host (Nginx)
 scp -i $PRIVATE_KEY_PATH -o StrictHostKeyChecking=no -o ProxyCommand="ssh -W %h:%p -i $PRIVATE_KEY_PATH -o StrictHostKeyChecking=no ubuntu@$NGINX_PUBLIC_IP" ../aws-data-user/clustersqlslave.sh ubuntu@$XMPP_DB_REPLICA_PRIVATE_IP:/home/ubuntu/clustersql.sh
+scp -i $PRIVATE_KEY_PATH -o StrictHostKeyChecking=no -o ProxyCommand="ssh -W %h:%p -i $PRIVATE_KEY_PATH -o StrictHostKeyChecking=no ubuntu@$NGINX_PUBLIC_IP" $PRIVATE_KEY_PATH ubuntu@$XMPP_DB_REPLICA_PRIVATE_IP:/home/ubuntu/clave.pem
 
 # Execute the script on the instance via bastion host (Nginx)
 ssh -i $PRIVATE_KEY_PATH -o StrictHostKeyChecking=no -o ProxyCommand="ssh -W %h:%p -i $PRIVATE_KEY_PATH -o StrictHostKeyChecking=no ubuntu@$NGINX_PUBLIC_IP" ubuntu@$XMPP_DB_REPLICA_PRIVATE_IP "chmod +x /home/ubuntu/clustersql.sh && sudo /home/ubuntu/clustersql.sh"

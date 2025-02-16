@@ -1,7 +1,7 @@
 #!/bin/bash
 #cambiar dominios
-wordpress=nginx-equipofinal217
-openfire=openfire-equipofinal217
+wordpress=nginx-equipofinal-217
+openfire=openfire-equipofinal-217
 #cambiar token
 token=7dc394d7-8282-438d-8358-643ed6b1145d
 #cambiar alumno
@@ -13,8 +13,8 @@ nginx_secundario="10.217.1.20"
 chmod 600 clave.pem
 mkdir -p "/home/ubuntu/duckdns/"
 cd "/home/ubuntu/duckdns/"
-sudo rm -rf /var/lib/apt/lists/*
-sudo apt update && sudo  DEBIAN_FRONTEND=noninteractive apt install nginx coturn -y
+
+sudo apt update && sudo  DEBIAN_FRONTEND=noninteractive apt install nginx -y
 echo "url=https://www.duckdns.org/update?domains=$wordpress&token=$token&ip=" | curl -k -o /home/ubuntu/duckdns/duck.log -K -
 echo "url=https://www.duckdns.org/update?domains=$openfire&token=$token&ip=" | curl -k -o /home/ubuntu/duckdns/duck.log -K -
 
@@ -56,6 +56,7 @@ local_status=\$(sudo systemctl is-active nginx)
 # Only execute DuckDNS update if Nginx is running locally and not remotely
 if [[ \"\$local_status\" == \"active\" && \"\$remote_status\" != \"active\" ]]; then
         echo url=\"https://www.duckdns.org/update?domains=$openfire&token=$token&ip=\" | curl -k -o /home/ubuntu/duckdns/duck.log -K -
+        echo url=\"https://www.duckdns.org/update?domains=nginxlocal218&token=$token&ip=10.217.1.10\" | curl -k -o /home/ubuntu/duckdns/duck.log -K -
 else
     exit 1
 fi
@@ -81,11 +82,9 @@ sudo snap connect certbot:plugin certbot-dns-duckdns
 #mover configuraciones
 sudo mv /home/ubuntu/default /etc/nginx/sites-available/default
 sudo mv /home/ubuntu/nginx.conf /etc/nginx/nginx.conf
-#Restart Nginx
+#parar Nginx
 sudo systemctl stop nginx
-
 while [ ! -e /etc/letsencrypt/live/$wordpress.duckdns.org ]; do
-    
     sudo certbot certonly \
         --non-interactive \
         --agree-tos \
@@ -95,10 +94,8 @@ while [ ! -e /etc/letsencrypt/live/$wordpress.duckdns.org ]; do
         --dns-duckdns-token "$token" \
         --dns-duckdns-propagation-seconds 60 \
         -d "$wordpress.duckdns.org"
-
 done
 while [ ! -e /etc/letsencrypt/live/$openfire.duckdns.org ]; do
-    
     sudo certbot certonly \
         --non-interactive \
         --agree-tos \
@@ -108,10 +105,8 @@ while [ ! -e /etc/letsencrypt/live/$openfire.duckdns.org ]; do
         --dns-duckdns-token "$token" \
         --dns-duckdns-propagation-seconds 60 \
         -d "$openfire.duckdns.org"
-
 done
 while [ ! -e /etc/letsencrypt/live/$openfire.duckdns.org-0001 ]; do
-    
 sudo certbot certonly \
         --non-interactive \
         --agree-tos \
@@ -121,9 +116,7 @@ sudo certbot certonly \
         --dns-duckdns-token "$token" \
         --dns-duckdns-propagation-seconds 60 \
         -d "*.$openfire.duckdns.org"
-
 done
-
 mkdir /home/ubuntu/certwordpress
 mkdir -p /home/ubuntu/certopenfire/wildcard
 
@@ -138,18 +131,18 @@ sudo systemctl start nginx
 
 echo "
 #!/bin/bash
-# Check Nginx status on the remote server
+# Comprobar estado de nginx en el servidor remoto
 ssh -o StrictHostKeyChecking=no -i /home/ubuntu/clave.pem ubuntu@$nginx_secundario 'sudo systemctl is-active nginx' > remote_status.txt
 
-# Check Nginx status on the local server
+# Comprobar estado de nginx en el servidor local
 local_status=\$(sudo systemctl is-active nginx)
 
-# Read the remote status
+# leer el estado remoto
 if [[ -f remote_status.txt ]]; then
     remote_status=\$(cat remote_status.txt)
 fi
 
-# If Nginx is inactive on both servers, start it locally
+# si esta inactivo en ambos, lo inicia localmente
 if [[ \"\$remote_status\" != \"active\" && \"\$local_status\" != \"active\" ]]; then
     sudo systemctl start nginx
 else
@@ -162,6 +155,9 @@ chmod +x /home/ubuntu/fallback.sh
 # Add a cron job to run the fallback script every minute
 (crontab -l 2>/dev/null; echo "*/1 * * * * /home/ubuntu/fallback.sh") | crontab -
 
+
+#Instalación de COTURN
+sudo DEBIAN_FRONTEND=noninteractive apt install coturn -y
 sudo chown -R www-data:turnserver /etc/letsencrypt/archive/
 sudo chmod -R 770 /etc/letsencrypt/archive/
 sudo echo "syslog
@@ -175,6 +171,8 @@ no-tcp
 no-tcp-relay
 cert="/etc/letsencrypt/live/$openfire.duckdns.org-0001/fullchain.pem"
 pkey="/etc/letsencrypt/live/$openfire.duckdns.org-0001/privkey.pem"
+use-auth-secret
+static-auth-secret=_Admin123
 " > /etc/turnserver.conf
 sudo systemctl restart coturn  
 sudo systemctl enable coturn  

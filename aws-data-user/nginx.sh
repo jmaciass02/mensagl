@@ -1,7 +1,7 @@
 #!/bin/bash
 #cambiar dominios
-wordpress=nginx-equipofinal217
-openfire=openfire-equipofinal217
+wordpress=nginx-equipofinal-217
+openfire=openfire-equipofinal-217
 #cambiar token
 token=7dc394d7-8282-438d-8358-643ed6b1145d
 #cambiar alumno
@@ -14,7 +14,7 @@ chmod 600 clave.pem
 mkdir -p "/home/ubuntu/duckdns/"
 cd "/home/ubuntu/duckdns/"
 
-sudo apt update && sudo  DEBIAN_FRONTEND=noninteractive apt install nginx -y
+sudo apt update && sudo  DEBIAN_FRONTEND=noninteractive apt install nginx coturn -y
 echo "url=https://www.duckdns.org/update?domains=$wordpress&token=$token&ip=" | curl -k -o /home/ubuntu/duckdns/duck.log -K -
 echo "url=https://www.duckdns.org/update?domains=$openfire&token=$token&ip=" | curl -k -o /home/ubuntu/duckdns/duck.log -K -
 
@@ -161,3 +161,20 @@ chmod +x /home/ubuntu/fallback.sh
 
 # Add a cron job to run the fallback script every minute
 (crontab -l 2>/dev/null; echo "*/1 * * * * /home/ubuntu/fallback.sh") | crontab -
+
+sudo chown -R www-data:turnserver /etc/letsencrypt/archive/
+sudo chmod -R 770 /etc/letsencrypt/archive/
+sudo echo "syslog
+realm=llamadas.$openfire.duckdns.org
+listening-port=3478
+tls-listening-port=5349
+relay-threads=0
+min-port=50000
+max-port=50010
+no-tcp
+no-tcp-relay
+cert="/etc/letsencrypt/live/$openfire.duckdns.org-0001/fullchain.pem"
+pkey="/etc/letsencrypt/live/$openfire.duckdns.org-0001/privkey.pem"
+" > /etc/turnserver.conf
+sudo systemctl restart coturn  
+sudo systemctl enable coturn  

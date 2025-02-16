@@ -22,10 +22,3 @@ sudo a2enmod rewrite
 sudo systemctl restart apache2
 
 sudo -u www-data wp-cli core download --path=/var/www/html
-
-
-
-
-
-
-
